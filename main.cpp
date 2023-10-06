@@ -2,7 +2,7 @@
 #include "Restaurant.cpp"
 #include <fstream>
 
-int MAXSIZE;
+
 
 void simulate(string filename, imp_res* r)
 {
@@ -57,6 +57,7 @@ int main(int argc, char* argv[]) {
 	imp_res* r = new imp_res();
 	string fileName = "test.txt";
     simulate(fileName, r);
+	r->print();
   	delete r;
 	return 0;
 }

@@ -6,6 +6,8 @@
 
 using namespace std;
 
+int MAXSIZE;
+
 class Restaurant {
 
 	public:
@@ -28,10 +30,7 @@ class Restaurant {
 			public:
 				customer(){}
 				customer(string na, int e, customer* p, customer *ne): name(na), energy(e), prev(p), next(ne){}
-				~customer(){
-					delete prev;
-					delete next;
-				}
+				~customer(){}
 				void print() {
 					cout << name << "-" << energy << endl;
 				}

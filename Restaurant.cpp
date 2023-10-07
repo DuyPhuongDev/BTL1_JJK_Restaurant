@@ -21,11 +21,12 @@ class imp_res : public Restaurant
 		void InsertCustomerNext(customer* curr, customer* customer);
 		void InsertQueue(customer* cus);
 		void AddList(customer* cus);
-		bool IsCusInRestaurant(customer* cus);
-		bool IsCusInQueue(customer* cus);
+		bool IsCusInRestaurant(string name);
+		bool IsCusInQueue(string name);
 		void removeCus(customer* cus);
-		void InsertionSort(customer* list);
+		void InsertionSort(customer* list, int size, int incr);
 		void ShellSort(customer* list);
+		void swapData(customer* p1, customer* p2);
 		customer* findPos(customer* customer);
 		void print();
 		/** METHOD IMPLIMENT**/
@@ -43,7 +44,8 @@ void imp_res::RED(string name, int energy){
 	cout << name << " " << energy << endl;
 	customer *cus = new customer (name, energy, nullptr, nullptr); //(name,energy,prev,next)
 	if(cus->energy){
-		if(numOfCus<MAXSIZE && !IsCusInRestaurant(cus)){
+		//if(IsCusInQueue(cus->name)|| IsCusInRestaurant(cus->name)) return;
+		if(numOfCus<MAXSIZE){
 			if(!customers){
 				customers = cus;
 				customers->prev = customers;
@@ -57,7 +59,7 @@ void imp_res::RED(string name, int energy){
 				(cus->energy-findPos(cus)->energy<0)? InsertCustomerPrev(findPos(cus),cus):InsertCustomerNext(findPos(cus),cus);
 			}
 			this->AddList(cus); // historylist cus in restaurant
-		}else if(numOfQueue<MAXSIZE && (!IsCusInQueue(cus) || !IsCusInRestaurant(cus))){
+		}else if(numOfQueue<MAXSIZE){
 			this->InsertQueue(cus);
 		}
 	}
@@ -93,6 +95,36 @@ void imp_res::PURPLE(){
 
 void imp_res::REVERSAL(){
 	cout << "reversal" << endl;
+	// dao nguoc oan linh
+	customer* p = this->x;
+	customer* q = this->x->next;
+	while(p!=q || p->prev!=q){
+		if(p->energy<0 && q->energy<0){
+			customer* tmp = q;
+			q->name = p->name;
+			q->energy = p->energy;
+			p->name = tmp->name;
+			p->energy = tmp->energy;
+			p = p->prev;
+			q = q->next;
+		}
+		if(p->energy>0) p = p->prev;
+		if(q->energy>0) q=q->next;
+	}
+
+	// dao nguoc chu thuat su
+	customer* pre = this->x;
+	customer* cur = this->x->next;
+	while(pre!=cur || cur->next!=pre){
+		if(cur->energy>0 && pre->energy){
+			swap(cur->energy,pre->energy);
+			swap(cur->name,pre->name);
+			pre = pre->prev;
+			cur = cur->next;
+		}
+		if(cur->energy<0) cur=cur->next;
+		if(pre->energy<0) pre=pre->prev;
+	}
 }
 
 void imp_res::UNLIMITED_VOID(){
@@ -244,19 +276,19 @@ void imp_res::InsertQueue(customer* customer){
 	numOfQueue++;
 }
 
-bool imp_res::IsCusInRestaurant(customer* cus){
+bool imp_res::IsCusInRestaurant(string name){
 	customer* curr = customers;
 	do{
-		if(cus->name == curr->name) return true;
+		if(curr->name == name) return true;
 		curr = curr->next;
 	}while(curr->next!=customers);
 	return false;
 }
 
-bool imp_res::IsCusInQueue(customer* cus){
+bool imp_res::IsCusInQueue(string name){
 	customer* curr = h_queue;
 	do{
-		if(cus->name == curr->name) return true;
+		if(curr->name == name) return true;
 		curr = curr->next;
 	}while(curr->next!= h_queue);
 	return false;
@@ -287,6 +319,14 @@ void imp_res::removeCus(customer* cus){
 	}while(curr->next!=customers);
 }
 
-void imp_res::InsertionSort(customer* list){
+void imp_res::swapData(customer* p1, customer* p2){
+	customer* temp = p1;
+	p1->name = p2->name;
+	p1->energy = p2->energy;
+	p2->name = temp->name;
+	p2->energy = temp->energy;
+}
 
+void imp_res::InsertionSort(customer* list, int size, int incr){
+	
 }

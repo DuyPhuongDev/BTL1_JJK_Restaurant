@@ -23,7 +23,8 @@ void simulate(string filename, imp_res* r)
     	else if(str == "BLUE") // BLUE <NUM>
     	{
                 ss >> num;
-    			r->BLUE(stoi(num));
+				int a = stoi(num);
+    			r->BLUE(a);
 		}
     	else if(str == "PURPLE") // PURPLE
     	{

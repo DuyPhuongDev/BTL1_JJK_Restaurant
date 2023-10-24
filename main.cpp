@@ -42,7 +42,7 @@ void simulate(string filename, imp_res* r)
     	{
     			r->DOMAIN_EXPANSION();
     	}
-    	else // LIGHT <NUM>
+    	else if(str == "LIGHT") // LIGHT <NUM>
     	{
                 ss >> num;
     			r->LIGHT(stoi(num));

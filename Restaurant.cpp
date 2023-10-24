@@ -17,13 +17,15 @@ class imp_res : public Restaurant
 		imp_res(): numOfCus(0), numOfQueue(0), h_queue(nullptr), t_queue(nullptr), h_list(nullptr), t_list(nullptr), x(nullptr) {};
 
 		/** METHOD HELPER **/
+		bool prior(customer* a, customer* b);
 		void InsertCustomerPrev(customer* curr, customer* customer);
 		void InsertCustomerNext(customer* curr, customer* customer);
 		void InsertQueue(customer* cus);
 		void AddList(customer* cus);
 		bool IsCusInRestaurant(string name);
 		bool IsCusInQueue(string name);
-		void removeCusInDesk(customer* cus);
+		bool IsCusInList(string name);
+		void removeCusInDesk(string name);
 		void removecus(customer* &head, customer* &tail, customer* cus);
 		int InsertionSort(customer* list, int size, int incr);
 		int ShellSort(customer* list, int size);
@@ -32,6 +34,7 @@ class imp_res : public Restaurant
 		void SwapCustomerInDesk(customer* a, customer* b);
 		void swapCus(customer* a, customer* b);
 		void print();
+		int indexOfCus(customer* cus);
 		/** METHOD IMPLIMENT**/
 		void RED(string name, int energy);
 		void BLUE(int num);
@@ -60,13 +63,10 @@ void imp_res::RED(string name, int energy){
 		else{
 			(cus->energy-findPos(cus)->energy<0)? InsertCustomerPrev(findPos(cus),cus):InsertCustomerNext(findPos(cus),cus);
 		}
-		this->AddList(cus); // historylist cus in restaurant and queue
 	}else if(numOfQueue<MAXSIZE){
 		this->InsertQueue(cus);
 	}
-	
-	
-
+	if(!IsCusInList(cus->name) && sizelist<MAXSIZE*2) AddList(cus);
 }
 
 void imp_res::BLUE(int num){
@@ -75,40 +75,38 @@ void imp_res::BLUE(int num){
 
 	// delete cus from history list and table
 	num = num>numOfCus? numOfCus:num;
-	for(int i=0; i<num;i++){
-		if(!this->x) return;
-		customer* cus = this->h_list;
-		this->removeCusInDesk(cus);
-		this->removecus(h_list,t_list,cus);
-		sizelist--;
-		// if(cus!=t_list){
-		// 	this->removeCusInDesk(cus);
-		// 	cus->next->prev = nullptr;
-		// 	h_list = cus->next;
-		// 	cus->next = nullptr;
-		// }else{
-		// 	h_list = nullptr;
-		// 	t_list = nullptr;
-		// }
-		// delete cus;
+	// for(int i=0; i<num;i++){
+	// 	if(!this->x) return;
+	// 	customer* cus = this->h_list;
+	// 	this->removeCusInDesk(cus->name);
+	// 	this->removecus(h_list,t_list,cus);
+	// 	sizelist--;
+	// }
+
+	int count = 0;
+	customer* p = h_list;
+	while(p){
+		if(count==num) break;
+		if(IsCusInRestaurant(p->name)){
+			this->removeCusInDesk(p->name);
+			this->removecus(h_list,t_list,p);
+			sizelist--;
+			count++;
+		}
+		p=p->next;
 	}
 
 	// insert cus from queue to table and delete cus in queue
 	num = num>numOfQueue? numOfQueue:num;
 	for(int i=0;i<num;i++){
 		if(!h_queue) return;
-		customer* cus = this->h_queue;
-		string name = cus->name; int energy = cus->energy;
-		this->removecus(h_queue,t_queue,cus);
-		this->RED(name, energy);
-		// if(cus!=t_queue){
-		// 	cus->next->prev = nullptr;
-		// 	h_queue = cus->next;
-		// 	cus->next = nullptr;
-		// }else{ h_queue = nullptr; t_queue = nullptr;}
-		// delete cus;
+		customer* cur = this->h_queue;
+		string name = cur->name; int energy = cur->energy;
+		this->removecus(h_queue,t_queue,cur);
 		this->numOfQueue--;
+		this->RED(name, energy);
 	}
+
 }
 
 void imp_res::PURPLE(){
@@ -119,7 +117,8 @@ void imp_res::PURPLE(){
 	customer* maxEnergyCustomer = nullptr;
     customer* curr = h_queue;
     while (curr) {
-        if (!maxEnergyCustomer || abs(curr->energy) >= abs(maxEnergyCustomer->energy)) {
+        if (!maxEnergyCustomer || abs(curr->energy) > abs(maxEnergyCustomer->energy)
+			|| (abs(curr->energy) == abs(maxEnergyCustomer->energy)) && indexOfCus(curr)>indexOfCus(maxEnergyCustomer)) {
             maxEnergyCustomer = curr;
         }
         curr = curr->next;
@@ -203,131 +202,122 @@ void imp_res::REVERSAL(){
 	}
 }
 
-void imp_res::UNLIMITED_VOID(){
+void imp_res::UNLIMITED_VOID() {
     cout << "unlimited_void" << endl;
 
-    // Tìm dãy con dài nhất có tổng giá trị ENERGY nhỏ nhất
-	// pointer travelse
-    customer* cur = x;
-	customer* pre = nullptr;
-	//pointer store 
-	customer* start = nullptr;
+    customer* start = x;
     customer* end = nullptr;
-    // value
-	int currentLen = 0;
-    int minSum = 99999999;
-    int currentSum = 0;
+	customer* s = nullptr;
+    int maxLength = 4;
+    int minSum = 999999;
+
+    while (start) {
+        int currentLen = 0;
+        int currentSum = 0;
+        customer* curr = start;
+
+        while (curr) {
+            currentLen++;
+            currentSum += curr->energy;
+
+            if ((currentLen >= 4 && currentSum < minSum) || (currentLen >= maxLength && currentSum == minSum) ) {
+				maxLength = currentLen;
+                minSum = currentSum;
+				s = start;
+                end = curr;
+            }
+
+            curr = curr->next;
+            if (curr == start) break;
+        }
+
+        start = start->next;
+        if (start == x) break;
+    }
 
 
-    // In ra thông tin các vị khách trong dãy tìm được
+	// find min element in sublist and print sublist begin minElement
+	if(s && end){
+		//find minElement
+		customer* minElement = s;
+		customer* p = s;
+		while(true){
+			if(p->energy<minElement->energy){
+				minElement = p;
+			}
+			p=p->next;
+			if(p==end->next) break;
+		}
+
+		// print from minElemt to end
+		customer* cur = minElement;
+		while(true){
+			cur->print();
+			cur = cur->next;
+			if(cur==end->next) break;
+		}
+		// print from s to minElement
+		customer* n = s;
+		while(n!=minElement){
+			n->print();
+			n=n->next;
+		}
+	}
 }
 
 void imp_res::DOMAIN_EXPANSION(){
-	//cout << "domain_expansion" << endl;
-	int sumEinDesk = 0; // Tổng energy chú thuật sư trên bàn ăn
+	cout << "domain_expansion" << endl;
+
+	if(!h_list) return;
+
+	int sumEinDesk = 0; // Tổng energy chú thuật sư
 	int sumEinRes = 0; // Tổng trị tuyệt đối Energy của oán linh trong Res
-	if(!this->x) return;
-	customer* curr = this->x;
-	do{
-		if(curr->energy>0) sumEinDesk += curr->energy;
-		else sumEinRes += abs(curr->energy);
-		curr = curr->next;
-	}while(curr!=this->x);
 
-	if(!h_queue){
-		customer* cur_q = h_queue;
-		while(cur_q){
-			if(cur_q->energy<0) sumEinRes += abs(cur_q->energy);
-			cur_q = cur_q->next;
-		}
-	}
-
-	// remove customer in desk
-	customer* p = this->x;
-	do{
-		customer* tmp = nullptr;
-		if((sumEinDesk>=sumEinRes && p->energy<0) || (sumEinDesk<sumEinRes && p->energy>0)){
-			tmp = p;
-			p->prev->next = p->next;
-			p->next->prev = p->prev;
-
-			if(p==this->x){
-				this->x = p->next;
-			}
-
-			p = p->next;
-			tmp->next = nullptr;
-			tmp->prev = nullptr;
-			delete tmp;
-			numOfCus--;
-			continue;
-		}
+	customer* p = h_list;
+	while(p){
+		if(p->energy<0) sumEinRes += abs(p->energy);
+		else sumEinDesk += p->energy;
 		p=p->next;
-		if(p==this->x) break;
-	}while(1);
-
-	// Đuổi khỏi hàng chờ
-	customer* q = h_queue;
-	while(q){
-		customer* tmp =  nullptr;
-		if((sumEinDesk>=sumEinRes && q->energy<0) || (sumEinDesk<sumEinRes && q->energy>0)){
-			tmp = q;
-			if(q == h_queue) h_queue = h_queue->next;
-			else if(q == t_queue){
-				t_queue = t_queue->prev;
-				t_queue->next = nullptr;
-			}else{
-				q->prev->next = q->next;
-				q->next->prev = q->prev;
-			}
-		}
-		q=q->next;
-		if(tmp){
-			tmp->next = nullptr;
-			tmp->prev = nullptr;
-			delete tmp;
-			numOfQueue--;
-		}
 	}
+
 
 	// print info customer was removed
 	customer* n = t_list;
-	while(n){
+	int sizel =  sizelist;
+	for(int i=0;i<sizel;i++){
 		customer* tmp = nullptr;
 		if((sumEinDesk>=sumEinRes && n->energy<0) || (sumEinDesk<sumEinRes && n->energy>0)){
-			cout<<n->name<<"-"<<n->energy<<"\n";
-			// xoa khoi list
 			tmp = n;
-			if(n==t_list){
-				t_list = t_list->prev;
-			}else if(n==h_list){
-				h_list = h_list->next;
-				h_list->prev = nullptr;
-			}
-			 else{
-				n->prev->next = n->next;
-				n->next->prev = n->prev;
-			}
+			n->print();
 		}
 		n=n->prev;
+		// xoa khoi list
 		if(tmp){
-			tmp->next = nullptr;
-			tmp->prev = nullptr;
-			delete tmp;
+			if(IsCusInQueue(tmp->name)){
+				customer* cur = h_queue;
+				int idx=0;
+				while(cur){
+					if(cur->name==tmp->name) break;
+					cur=cur->next;
+					idx++;
+				}
+				removecus(h_queue,t_queue,get(h_queue,idx));
+				numOfQueue--;
+			}
+			if(IsCusInRestaurant(tmp->name)) removeCusInDesk(tmp->name);
+			removecus(h_list,t_list,tmp);
+			sizelist--;
 		}
-		sizelist--;
+		
 	}
 
 	// Nếu vị trí trống => add to res from queue
 	while(numOfCus<MAXSIZE && numOfQueue>0){
+		if(!h_queue) return;
 		customer* cus = this->h_queue;
-		this->RED(cus->name, cus->energy);
-		if(cus!=t_queue){
-			cus->next->prev = nullptr;
-			h_queue = cus->next;
-			cus->next = nullptr;
-		}else{ h_queue = nullptr; t_queue = nullptr;}
-		delete cus;
+		string name = cus->name; int energy = cus->energy;
+		this->removecus(h_queue,t_queue,cus);
+		this->RED(name, energy);
 		this->numOfQueue--;
 	}
 }
@@ -338,7 +328,6 @@ void imp_res::LIGHT(int num){
 		if(!h_queue) return;
 		customer* curr = h_queue;
 		while(curr){
-			//cout<<curr->name<<"-"<<curr->energy<<endl;
 			curr->print();
 			curr = curr->next;
 		}
@@ -346,7 +335,6 @@ void imp_res::LIGHT(int num){
 		if(!this->x) return;
 		customer* cur = this->x;
 		do{
-			//cout<<cur->name<<"-"<<cur->energy<<endl;
 			cur->print();
 			cur = num>0? cur->next:cur->prev;
 		}while(cur!=this->x);
@@ -377,6 +365,17 @@ void imp_res::print(){
 		}
 	}
 	cout<<numOfQueue<<endl;
+
+	cout<<"List: ";
+	if(!h_list) cout<<"null ";
+	else{
+		customer* n = h_list;
+		while(n){
+			cout<<"["<<n->name<<" "<<n->energy<<"] ";
+			n = n->next;
+		}
+	}
+	cout<<sizelist<<endl;
 }
 
 void imp_res::InsertCustomerPrev(customer* curr, customer* customer){
@@ -458,10 +457,10 @@ void imp_res::AddList(customer* cus){
 	sizelist++;
 }
 
-void imp_res::removeCusInDesk(customer* cus){
+void imp_res::removeCusInDesk(string name){
 	customer* curr = this->x;
 	do{
-		if(cus->name == curr->name){
+		if(curr->name == name){
 			curr->prev->next = curr->next;
 			curr->next->prev = curr->prev;
 			this->numOfCus--;
@@ -492,12 +491,13 @@ int imp_res::InsertionSort(customer* list, int n, int incr){
 	// Sắp xếp giảm dần |E| của sublist
 	int count = 0; // num of swap
 	for(int i = incr; i<n; i+=incr){
-		for(int j = i; (j>=incr) && (abs(get(list,j)->energy)>abs(get(list,j-incr)->energy)); j-=incr){
+		for(int j = i; (j>=incr) && prior(get(list,j),get(list,j-incr)); j-=incr){
 			// swap
 			this->swapCus(get(list,j), get(list,j-incr));
 			count++;
 		}
 	}
+	cout<<count<<endl;
 	return count;
 
 }
@@ -514,6 +514,7 @@ int imp_res::ShellSort(customer* list, int size){
 	return count;
 
 }
+
 void imp_res::SwapCustomerInDesk(customer* a, customer* b){
 	if(!a || !b || a==b) return;
 
@@ -558,4 +559,34 @@ void imp_res::removecus(customer* &head, customer* &tail, customer* cus){
 	}
 
 	delete cus;
+}
+
+bool imp_res::IsCusInList(string name){
+	if(h_list){
+		customer* curr = h_list;
+		while(curr){
+			if(curr->name == name) return true;
+			curr = curr->next;
+		}
+	}
+	return false;
+}
+
+int imp_res::indexOfCus(customer* cus){
+	if(h_list){
+		customer* cur = h_list;
+		int idx = 0;
+		while(cur){
+			if(cus->name == cur->name) return idx;
+			cur = cur->next;
+			idx++;
+		}
+	}
+	return -1;
+}
+
+bool imp_res::prior(customer* a, customer* b){
+	if(abs(a->energy) > abs(b->energy)) return true;
+	if((abs(a->energy) == abs(b->energy)) && indexOfCus(a)<indexOfCus(b)) return true;
+	return false;
 }
